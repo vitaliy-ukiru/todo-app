@@ -1,0 +1,682 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "todo app"
+host: "localhost"
+basePath: "/api"
+schemes:
+- "https"
+- "http"
+paths:
+  /user:
+    post:
+      tags: [user]
+      summary: Create user
+      operationId: "createUser"
+      parameters:
+      - in: body
+        name: credentials
+        required: true
+        schema:
+          type: object
+          required: [username, password, email]
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+              format: password
+            email:
+              type: string
+      responses:
+        201:
+          description: User Created
+          schema:
+           allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      $ref: "#/definitions/User"
+        400:
+          $ref: "#/responses/InvalidInput"
+        default:
+          $ref: "#/responses/UnexpectedError"
+
+    get:
+      tags: [user]
+      summary: Get self
+      operationId: getSelf
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User found
+          schema:
+            $ref: "#/definitions/User"
+        default:
+          $ref: "#/responses/UnexpectedError"
+
+    delete:
+      tags: [user]
+      summary: Delete self
+      operationId: deleteSelf
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+            $ref: "#/responses/Successfully"
+        403:
+         $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+
+  /user/password:
+    put:
+      tags: [ user ]
+      summary: Update self
+      operationId: updateSelf
+      parameters:
+        - name: dto
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [ password ]
+            properties:
+              actual_password:
+                description: Current password
+                type: string
+                format: password
+              new_password:
+                x-nullable: true
+                type: string
+                format: password
+      security:
+        - BearerAuth: [ ]
+      responses:
+        200:
+          $ref: "#/responses/Successfully"
+        400:
+          $ref: "#/responses/InvalidInput"
+        403:
+          description: Password incorrect
+          schema:
+            $ref: "#/definitions/ResponseError"
+        409:
+          description: Unique data already uses
+          schema:
+            $ref: "#/definitions/ResponseError"
+        default:
+          $ref: "#/responses/UnexpectedError"
+
+  
+  /auth/login:
+    post:
+      tags: [user]
+      summary: Login to app
+      operationId: loginUser
+      consumes:
+        - multipart/form-data
+      parameters:
+      - name: email
+        in: formData
+        required: true
+        type: string
+        format: email
+        
+      - name: password
+        in: formData
+        required: true
+        type: string
+        format: password
+
+      responses:
+        200:
+          description: successful login
+          schema:
+            allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        access_token:
+                          type: string
+                          format: jwt
+                        refresh_token:
+                          type: string
+                          format: jwt
+        400:
+          description: Incorrect credentionals supplied
+          schema:
+             $ref: "#/definitions/ResponseError"
+        
+        default:
+          $ref: "#/responses/UnexpectedError"
+  /auth/logout:
+    get:
+      tags: [user]
+      summary: Logout from session
+      operationId: logoutUser
+      security:
+        - BearerAuth: []
+      responses:
+        default:
+          $ref: "#/responses/Successfully"
+            
+  
+  /task:
+    post:
+      tags: [tasks]
+      summary: Create task
+      operationId: createTask
+      parameters:
+        - in: body
+          name: Task object
+          required: true
+          schema:
+            type: object
+            required: [author_id, title]
+            properties:
+              author_id: 
+                type: string
+                format: uuid
+              list_id:
+                type: string
+                format: uuid
+                x-nullable: true
+              title: 
+                type: string
+              body:
+                type: string
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Task created
+          schema:
+             allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      $ref: "#/definitions/Task"
+        400:
+           $ref: "#/responses/InvalidInput"
+        default:
+          $ref: "#/responses/UnexpectedError"
+  
+  /task/{id}:
+    parameters:
+        - name: id
+          in: path
+          description: Task id
+          required: true
+          type: string
+          
+    get:
+      tags: [tasks]
+      summary: Get task by ID
+      operationId: getTask
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Succesfully
+          schema:
+             allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      $ref: "#/definitions/Task"
+        404:
+          $ref: "#/responses/NotFound"
+        403:
+          $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+    
+    put:
+      tags: [tasks]
+      summary: Update task by ID
+      operationId: updateTask
+      parameters:
+        - name: task-update-fields
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              done:
+                type: boolean
+                x-nullable: true
+              title: 
+                type: string
+                x-nullable: true
+              body:
+                type: string
+                x-nullable: true
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+         $ref: "#/responses/Successfully"
+        404:
+           $ref: "#/responses/NotFound"
+        default:
+          $ref: "#/responses/UnexpectedError"
+          
+    delete:
+      tags: [tasks]
+      summary: Delete task by ID
+      operationId: deleteTask
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          $ref: "#/responses/Successfully"
+        404:
+          $ref: "#/responses/NotFound"
+        403:
+          $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+    
+    
+  
+  /task/{id}/change-status:
+    post:
+      tags: [tasks]
+      summary: Change task status (is done)
+      operationId: changeTaskStatus
+      parameters:
+        - name: id
+          in: path
+          description: Task id
+          required: true
+          type: string
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Succesfully
+          schema:
+             allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:          
+                      type: object
+                      properties:
+                        current_state:
+                          type: boolean
+        404:
+          $ref: "#/responses/NotFound"
+        403:
+          $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+
+  /task/default-list:
+    get:
+      tags: [ tasks ]
+      summary: Get main (default) task lsit
+      operationId: getMainTaskList
+      security:
+        - BearerAuth: [ ]
+      responses:
+        200:
+          description: Main (default) task list
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/BasicTask"
+  
+  /task-list:
+    post:
+      tags: [task-list]
+      summary: "Create task list"
+      operationId: createTaskList
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task-list
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              title: 
+                type: string
+      responses:
+        201:
+          description: List created
+          schema:
+             allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      $ref: "#/definitions/BasicTaskList"
+        400:
+          $ref: "#/responses/InvalidInput"
+        default:
+          $ref: "#/responses/UnexpectedError"
+    
+    get:
+      tags: [task-list]
+      summary: Get self task lists
+      operationId: getMyTaskLists
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: List of task sets
+          schema:
+             allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      type: array
+                      items:
+                        $ref: "#/definitions/BasicTaskList"
+        default:
+          $ref: "#/responses/UnexpectedError"
+
+  
+  /task-list/{id}:
+    parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+          
+    get:
+      tags: [task-list]
+      summary: Get task list by ID
+      operationId: getTaskList
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Task list with {id}
+          schema:
+           allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      $ref: "#/definitions/TaskList"
+        404:
+           $ref: "#/responses/NotFound"
+        403:
+          $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+    
+    put:
+      tags: [task-list]
+      summary: Update task list by ID
+      operationId: updateTaskList
+      parameters:
+        - name: new_task_list
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              new_title:
+                type: string
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Task list updated
+          schema:
+            $ref: "#/definitions/ResponseOk"
+        404:
+           $ref: "#/responses/NotFound"
+        403:
+         $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+    
+    delete:
+      tags: [task-list]
+      summary: Delete task list by ID
+      operationId: deleteTaskList
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Sucessfully delete
+          schema:
+            $ref: "#/definitions/ResponseOk"
+        404:
+          $ref: "#/responses/NotFound"
+        403:
+          $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+  
+  /task-list/{id}/info:
+    get:
+      tags: [task-list]
+      summary: Get basic task list info (without tasks)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Task list object with tasks
+          schema:
+            allOf:
+                - $ref: "#/definitions/ResponseOk"
+                - type: object
+                  properties:
+                    result:
+                      $ref: "#/definitions/BasicTaskList"
+        404:
+           $ref: "#/responses/NotFound"
+        403:
+           $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+        
+  
+  /task-list/{id}/tasks:
+    get:
+      tags: [task-list]
+      summary: Get tasks from list by ID
+      operationId: getTasksFromList
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Task list
+          schema:
+            allOf:
+              - $ref: "#/definitions/ResponseOk"
+              - type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: "#/definitions/Task"
+        404:
+          $ref: "#/responses/NotFound"
+        403:
+           $ref: "#/responses/NoAccessEntity"
+        default:
+          $ref: "#/responses/UnexpectedError"
+
+
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+
+
+definitions:
+  User:
+    type: object
+    required:
+      - password
+      - email
+      - username
+    properties: 
+      id: 
+        type: string
+        format: uuid
+      username:
+        type: string
+      password:
+        type: string
+        format: password
+      email:
+        type: string
+        format: email
+      create_at:
+        type: string
+        format: date-time
+        
+  BasicTask:
+    type: object
+    required:
+      - title
+      - done
+    properties:
+      id:
+        type: string
+        format: uuid
+    
+      done:
+        type: boolean
+        default: false
+      title: 
+        type: string
+      body:
+        type: string
+      create_at:
+        type: string
+        format: date-time
+      update_at:
+        type: string
+        format: date-time
+        
+  Task:
+    allOf:
+      - type: object
+        required:
+          - creator_id
+        properties:
+          creator_id:
+            type: string
+            format: uuid
+          list_id:
+            type: string
+            x-nullable: true
+            format: uuid
+      - $ref: "#/definitions/BasicTask"
+  
+  BasicTaskList:
+    type: object
+    required:
+      - title
+    properties:
+      id:
+        type: string
+        format: uuid
+      
+      creator_id:
+        type: string
+        format: uuid
+      
+      title: 
+        type: string
+  
+  TaskList:
+    type: object
+    allOf:
+      - $ref: '#/definitions/BasicTaskList'
+      - type: object
+        properties:
+          tasks:
+            type: array
+            items:
+              $ref: "#/definitions/BasicTask"
+ 
+  
+  ResponseOk:
+    type: object
+    required: [ok]
+    properties:
+      ok: 
+        type: boolean
+        default: true
+        
+  ResponseError:
+    type: object
+    required: [ok]
+    properties:
+      ok: 
+        type: boolean
+        default: false
+      error:
+        $ref: "#/definitions/Error"
+        
+  
+  ErrorCode:
+    type: string
+
+  
+  Error: 
+    type: object
+    properties:
+      msg:
+        type: string
+      error_code:
+        $ref: "#/definitions/ErrorCode"
+
+
+responses:
+  UnexpectedError:
+    description: Unexpected error
+    schema: 
+      $ref: "#/definitions/ResponseError"
+  
+  Successfully:
+    description: Successfully operation
+    schema:
+      $ref: "#/definitions/ResponseOk"
+  
+  NotFound:
+    description: Entity not found
+    schema:
+      $ref: "#/definitions/ResponseError"
+  
+  NoAccessEntity:
+    description: User haven't acces to this entity
+    schema:
+       $ref: "#/definitions/ResponseError"
+  
+  InvalidInput:
+    description: Invalid data supplied
+    schema:
+      $ref: "#/definitions/ResponseError"
+
+      
