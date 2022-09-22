@@ -24,6 +24,13 @@ type Querier interface {
 	// CreateUserScan scans the result of an executed CreateUserBatch query.
 	CreateUserScan(results pgx.BatchResults) (CreateUserRow, error)
 
+	ExistsUser(ctx context.Context, id pgxuuid.UUID) (*int, error)
+	// ExistsUserBatch enqueues a ExistsUser query into batch to be executed
+	// later by the batch.
+	ExistsUserBatch(batch genericBatch, id pgxuuid.UUID)
+	// ExistsUserScan scans the result of an executed ExistsUserBatch query.
+	ExistsUserScan(results pgx.BatchResults) (*int, error)
+
 	FindUserByID(ctx context.Context, id pgxuuid.UUID) (FindUserByIDRow, error)
 	// FindUserByIDBatch enqueues a FindUserByID query into batch to be executed
 	// later by the batch.
@@ -131,6 +138,9 @@ func PrepareAllQueries(ctx context.Context, p preparer) error {
 	if _, err := p.Prepare(ctx, createUserSQL, createUserSQL); err != nil {
 		return fmt.Errorf("prepare query 'CreateUser': %w", err)
 	}
+	if _, err := p.Prepare(ctx, existsUserSQL, existsUserSQL); err != nil {
+		return fmt.Errorf("prepare query 'ExistsUser': %w", err)
+	}
 	if _, err := p.Prepare(ctx, findUserByIDSQL, findUserByIDSQL); err != nil {
 		return fmt.Errorf("prepare query 'FindUserByID': %w", err)
 	}
@@ -222,6 +232,36 @@ func (q *DBQuerier) CreateUserScan(results pgx.BatchResults) (CreateUserRow, err
 		return item, fmt.Errorf("scan CreateUserBatch row: %w", err)
 	}
 	return item, nil
+}
+
+const existsUserSQL = `SELECT count('*')
+FROM users
+WHERE id = $1::uuid;`
+
+// ExistsUser implements Querier.ExistsUser.
+func (q *DBQuerier) ExistsUser(ctx context.Context, id pgxuuid.UUID) (*int, error) {
+	ctx = context.WithValue(ctx, "pggen_query_name", "ExistsUser")
+	row := q.conn.QueryRow(ctx, existsUserSQL, id)
+	var item int
+	if err := row.Scan(&item); err != nil {
+		return &item, fmt.Errorf("query ExistsUser: %w", err)
+	}
+	return &item, nil
+}
+
+// ExistsUserBatch implements Querier.ExistsUserBatch.
+func (q *DBQuerier) ExistsUserBatch(batch genericBatch, id pgxuuid.UUID) {
+	batch.Queue(existsUserSQL, id)
+}
+
+// ExistsUserScan implements Querier.ExistsUserScan.
+func (q *DBQuerier) ExistsUserScan(results pgx.BatchResults) (*int, error) {
+	row := results.QueryRow()
+	var item int
+	if err := row.Scan(&item); err != nil {
+		return &item, fmt.Errorf("scan ExistsUserBatch row: %w", err)
+	}
+	return &item, nil
 }
 
 const findUserByIDSQL = `SELECT id, email, username, created_at

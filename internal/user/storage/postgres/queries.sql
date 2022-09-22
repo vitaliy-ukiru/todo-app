@@ -5,6 +5,12 @@ VALUES (pggen.arg('Email'),
         pggen.arg('Password'))
 RETURNING id, created_at;
 
+
+--name: ExistsUser :one
+SELECT count('*')
+FROM users
+WHERE id = pggen.arg('ID')::uuid;
+
 --name: FindUserByID :one
 SELECT id, email, username, created_at
 FROM users
