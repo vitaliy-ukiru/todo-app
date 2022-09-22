@@ -46,6 +46,10 @@ type Service struct {
 	userUC UserUsecase
 }
 
+func NewService(store Storage, userUC UserUsecase) *Service {
+	return &Service{store: store, userUC: userUC}
+}
+
 func (s Service) Create(ctx context.Context, dto CreateTaskDTO) (*Task, error) {
 	if err := s.userUC.Exists(ctx, dto.CreatorID); err != nil {
 		return nil, errors.WithStack(err)
