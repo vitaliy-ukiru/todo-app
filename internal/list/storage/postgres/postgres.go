@@ -5,16 +5,19 @@ import (
 	"database/sql/driver"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/vitaliy-ukiru/todo-app/internal/list"
 	"github.com/vitaliy-ukiru/todo-app/pkg/pgxuuid"
 )
 
+type Connection interface {
+	genericConn
+	driver.Pinger
+}
+
 type Repository struct {
 	q *DBQuerier
-	p *pgxpool.Pool
+	c Connection
 }
 
 func NewRepository(c Connection) *Repository {
@@ -68,5 +71,5 @@ func (r Repository) Delete(ctx context.Context, listId uuid.UUID) error {
 }
 
 func (r Repository) Ping(ctx context.Context) error {
-	return r.p.Ping(ctx)
+	return r.c.Ping(ctx)
 }
