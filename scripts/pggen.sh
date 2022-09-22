@@ -18,7 +18,7 @@ gen() {
   --log "debug" \
   --schema-glob "./db/schema.sql" \
   --query-glob "./internal/${1}/storage/postgres/queries.sql" \
-  --output-dir "./internal/${1}/storage/postgres/gen/" \
+  --output-dir "./internal/${1}/storage/postgres/" \
   -postgres-connection "user=${PG_USER} password=${PG_PASSWORD} dbname=${PG_DATABASE}" \
   -go-type "text=string" \
   -go-type "uuid=${GO_PKG}/pkg/pgxuuid.UUID"

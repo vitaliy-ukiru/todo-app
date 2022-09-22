@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql/driver"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
@@ -9,17 +10,16 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/vitaliy-ukiru/todo-app/internal/task"
-	"github.com/vitaliy-ukiru/todo-app/internal/task/storage/postgres/gen"
 	"github.com/vitaliy-ukiru/todo-app/pkg/pgxuuid"
 )
 
 type Repository struct {
-	q *gen.DBQuerier
+	q *DBQuerier
 	p *pgxpool.Pool
 }
 
 func (r Repository) Create(ctx context.Context, newTask *task.Task) error {
-	row, err := r.q.CreateTask(ctx, gen.CreateTaskParams{
+	row, err := r.q.CreateTask(ctx, CreateTaskParams{
 		CreatorID: pgxuuid.New(newTask.CreatorID),
 		ListID:    pgxuuid.NewPointer(newTask.ListID),
 		Title:     newTask.Title,
@@ -63,7 +63,7 @@ func (r Repository) InOneListBasic(ctx context.Context, list uuid.UUID) ([]task.
 		return nil, errors.WithStack(err)
 	}
 
-	return convertSlice(rows, func(in gen.FindBasicTaskInListRow) task.BasicTask {
+	return convertSlice(rows, func(in FindBasicTaskInListRow) task.BasicTask {
 		return rowToBaseTask(rowType(in))
 	}), nil
 }
@@ -74,7 +74,7 @@ func (r Repository) InNullList(ctx context.Context, user uuid.UUID) ([]task.Basi
 		return nil, errors.WithStack(err)
 	}
 
-	return convertSlice(list, func(in gen.FindTaskInMainListRow) task.BasicTask {
+	return convertSlice(list, func(in FindTaskInMainListRow) task.BasicTask {
 		return rowToBaseTask(rowType(in))
 	}), nil
 
@@ -82,7 +82,7 @@ func (r Repository) InNullList(ctx context.Context, user uuid.UUID) ([]task.Basi
 
 func (r Repository) Update(ctx context.Context, id uuid.UUID, title, body *string, status *bool) error {
 	return errors.WithStack(r.p.BeginFunc(ctx, func(tx pgx.Tx) error {
-		q := gen.NewQuerier(tx)
+		q := NewQuerier(tx)
 		pgId := pgxuuid.New(id)
 		if title != nil {
 			if _, err := q.UpdateTaskTitle(ctx, *title, pgId); err != nil {

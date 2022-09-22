@@ -2,32 +2,33 @@ package postgres
 
 import (
 	"context"
+	"database/sql/driver"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/vitaliy-ukiru/todo-app/internal/list"
-	"github.com/vitaliy-ukiru/todo-app/internal/list/storage/postgres/gen"
 	"github.com/vitaliy-ukiru/todo-app/pkg/pgxuuid"
 )
 
 type Repository struct {
-	querier *gen.DBQuerier
-	p       *pgxpool.Pool
+	q *DBQuerier
+	p *pgxpool.Pool
 }
 
-func New(pool *pgxpool.Pool) *Repository {
-	return &Repository{p: pool, querier: gen.NewQuerier(pool)}
+func NewRepository(c Connection) *Repository {
+	return &Repository{c: c, q: NewQuerier(c)}
 }
 
 func (r Repository) CreateList(ctx context.Context, title string, creator uuid.UUID) (uuid.UUID, error) {
-	listId, err := r.querier.CreateList(ctx, pgxuuid.New(creator), title)
+	listId, err := r.q.CreateList(ctx, pgxuuid.New(creator), title)
 	return listId.UUID, errors.WithStack(err)
 
 }
 
 func (r Repository) FindByID(ctx context.Context, listId uuid.UUID) (*list.TaskListInfo, error) {
-	listRow, err := r.querier.FindListByID(ctx, pgxuuid.New(listId))
+	listRow, err := r.q.FindListByID(ctx, pgxuuid.New(listId))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -39,7 +40,7 @@ func (r Repository) FindByID(ctx context.Context, listId uuid.UUID) (*list.TaskL
 }
 
 func (r Repository) FindByUserID(ctx context.Context, userId uuid.UUID) ([]list.TaskListInfo, error) {
-	lists, err := r.querier.FindUserLists(ctx, pgxuuid.New(userId))
+	lists, err := r.q.FindUserLists(ctx, pgxuuid.New(userId))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -56,13 +57,13 @@ func (r Repository) FindByUserID(ctx context.Context, userId uuid.UUID) ([]list.
 }
 
 func (r Repository) UpdateTitle(ctx context.Context, listId uuid.UUID, newTitle string) error {
-	_, err := r.querier.UpdateListTitle(ctx, newTitle, pgxuuid.New(listId))
+	_, err := r.q.UpdateListTitle(ctx, newTitle, pgxuuid.New(listId))
 	//TODO: add check on rows affected
 	return errors.WithStack(err)
 }
 
 func (r Repository) Delete(ctx context.Context, listId uuid.UUID) error {
-	_, err := r.querier.DeleteList(ctx, pgxuuid.New(listId))
+	_, err := r.q.DeleteList(ctx, pgxuuid.New(listId))
 	return errors.WithStack(err)
 }
 
