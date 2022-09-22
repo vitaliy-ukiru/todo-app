@@ -13,14 +13,13 @@ import (
 type Usecase interface {
 	Create(ctx context.Context, list CreateTaskListDTO) (*TaskListInfo, error)
 
-	FindById(ctx context.Context, listId string) (*TaskListInfo, error)
-	FindUserLists(ctx context.Context, userId string) ([]TaskListInfo, error)
-
-	FullTaskList(ctx context.Context, listId string) (*TaskList, error)
+	FindById(ctx context.Context, listId uuid.UUID) (*TaskListInfo, error)
+	FindUserLists(ctx context.Context, userId uuid.UUID) ([]TaskListInfo, error)
+	FullTaskList(ctx context.Context, listId uuid.UUID) (*TaskList, error)
 
 	UpdateTitle(ctx context.Context, list UpdateTaskListDTO) (*TaskListInfo, error)
 
-	Delete(ctx context.Context, listId string) error
+	Delete(ctx context.Context, listId uuid.UUID) error
 	Ping(ctx context.Context) (time.Duration, error)
 }
 
@@ -35,11 +34,11 @@ type Storage interface {
 }
 
 type UserUsecase interface {
-	Exists(ctx context.Context, userId string) error
+	Exists(ctx context.Context, userId uuid.UUID) error
 }
 
 type TaskUsecase interface {
-	FindInList(ctx context.Context, listId string) ([]TaskInfoDTO, error)
+	FindInList(ctx context.Context, listId uuid.UUID) ([]TaskInfoDTO, error)
 }
 
 type Service struct {
@@ -60,45 +59,30 @@ func (s Service) Create(ctx context.Context, dto CreateTaskListDTO) (*TaskListIn
 		return nil, errors.WithStack(err)
 	}
 
-	creatorId, err := uuid.Parse(dto.CreatorID)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	dto.Title = html.EscapeString(strings.TrimSpace(dto.Title))
-	listId, err := s.store.CreateList(ctx, dto.Title, creatorId)
+	listId, err := s.store.CreateList(ctx, dto.Title, dto.CreatorID)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	return &TaskListInfo{
-		CreatorID: creatorId,
+		CreatorID: dto.CreatorID,
 		ID:        listId,
 		Title:     dto.Title,
 	}, nil
 }
 
-func (s Service) FindById(ctx context.Context, id string) (*TaskListInfo, error) {
-	listId, err := uuid.Parse(id)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
+func (s Service) FindById(ctx context.Context, listId uuid.UUID) (*TaskListInfo, error) {
 	listInfo, err := s.store.FindByID(ctx, listId)
 	return listInfo, errors.WithStack(err)
 }
 
-func (s Service) FindUserLists(ctx context.Context, id string) ([]TaskListInfo, error) {
-	userId, err := uuid.Parse(id)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
+func (s Service) FindUserLists(ctx context.Context, userId uuid.UUID) ([]TaskListInfo, error) {
 	listsInfo, err := s.store.FindByUserID(ctx, userId)
 	return listsInfo, errors.WithStack(err)
 }
 
-func (s Service) FullTaskList(ctx context.Context, listId string) (*TaskList, error) {
+func (s Service) FullTaskList(ctx context.Context, listId uuid.UUID) (*TaskList, error) {
 	listInfo, err := s.FindById(ctx, listId)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -116,13 +100,9 @@ func (s Service) FullTaskList(ctx context.Context, listId string) (*TaskList, er
 }
 
 func (s Service) UpdateTitle(ctx context.Context, list UpdateTaskListDTO) (*TaskListInfo, error) {
-	listId, err := uuid.Parse(list.ListID)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
 	title := html.EscapeString(strings.TrimSpace(list.NewTitle))
 
-	if err := s.store.UpdateTitle(ctx, listId, title); err != nil {
+	if err := s.store.UpdateTitle(ctx, list.ListID, title); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -130,12 +110,7 @@ func (s Service) UpdateTitle(ctx context.Context, list UpdateTaskListDTO) (*Task
 	return taskListInfo, errors.WithStack(err)
 }
 
-func (s Service) Delete(ctx context.Context, id string) error {
-	listId, err := uuid.Parse(id)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
+func (s Service) Delete(ctx context.Context, listId uuid.UUID) error {
 	return errors.WithStack(s.store.Delete(ctx, listId))
 }
 
