@@ -6,7 +6,7 @@ VALUES (pggen.arg('Email'),
 RETURNING id, created_at;
 
 --name: FindUserByID :one
-SELECT id, email, username, password, created_at
+SELECT id, email, username, created_at
 FROM users
 WHERE id = pggen.arg('ID')::uuid;
 
@@ -25,6 +25,3 @@ WHERE id = pggen.arg('ID')::uuid;
 DELETE
 FROM users
 WHERE id = pggen.arg('ID')::uuid;
-
---name: PingUserDB :exec
-SELECT 1;

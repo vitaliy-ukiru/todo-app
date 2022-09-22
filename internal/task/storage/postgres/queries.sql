@@ -49,7 +49,7 @@ SELECT id,
        created_at,
        updated_at
 FROM tasks
-WHERE list_id = pggen.arg('ListID');
+WHERE list_id = pggen.arg('ListID')::uuid;
 
 --name: UpdateTaskTitle :exec
 UPDATE tasks
@@ -70,13 +70,10 @@ WHERE id = pggen.arg('ID')::uuid;
 --name: ChangeTaskStatus :one
 UPDATE tasks
 SET done = not done
-WHERE id = pggen.arg('ID')
+WHERE id = pggen.arg('ID')::uuid
 RETURNING done;
 
 --name: DeleteTask :exec
 DELETE
 FROM tasks
-WHERE id = pggen.arg('ID');
-
---name: PingTaskDB :exec
-SELECT 1;
+WHERE id = pggen.arg('ID')::uuid;
