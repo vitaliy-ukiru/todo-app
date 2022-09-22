@@ -43,7 +43,7 @@ func (s Provider) CreateToken(claims Claims) (string, error) {
 	return token, errors.WithStack(err)
 }
 
-// UnverifiedClaims only parses json claims to dest.
+// UnverifiedClaims only unmarshall json claims to dest.
 func UnverifiedClaims(tokenString string, dest Claims) error {
 	_, _, err := jwt.NewParser().ParseUnverified(tokenString, dest)
 	return errors.WithStack(err)
