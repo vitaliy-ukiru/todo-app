@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/google/uuid"
 	"github.com/vitaliy-ukiru/todo-app/pkg/log/zap"
 )
 
@@ -18,6 +19,10 @@ func Any(key string, value any) Field {
 
 func Error(value error) Field {
 	return zap.Error(value)
+}
+
+func UUID(key string, value uuid.UUID) Field {
+	return zap.String(key, value.String())
 }
 
 func String(key string, value string) Field {
