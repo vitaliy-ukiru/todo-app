@@ -34,8 +34,8 @@ type JwtService struct {
 	userUC          UserChecker
 }
 
-func NewJwtService(provider *jwt.Provider, accessTokenLife time.Duration) *JwtService {
-	return &JwtService{provider: provider, accessTokenLife: accessTokenLife}
+func NewJwtService(provider *jwt.Provider, accessTokenLife time.Duration, userUC UserChecker) *JwtService {
+	return &JwtService{provider: provider, accessTokenLife: accessTokenLife, userUC: userUC}
 }
 
 type CredentialsDTO struct {
@@ -73,8 +73,12 @@ func (j JwtService) NewAccessToken(u user.User) (string, time.Time, error) {
 	return token, claims.ExpiresAt.Time, errors.WithStack(err)
 }
 
-func (j JwtService) VerifyToken(token string) (*Claims, error) {
+func (j JwtService) VerifyWithClaims(token string) (*Claims, error) {
 	claims := new(Claims)
-	err := j.provider.VerifyToken(token, claims)
+	err := j.provider.VerifyTokenWithClaims(token, claims)
 	return claims, errors.WithStack(err)
+}
+
+func (j JwtService) Verify(token string) error {
+	return errors.WithStack(j.provider.VerifyToken(token))
 }
