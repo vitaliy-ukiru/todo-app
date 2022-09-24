@@ -12,8 +12,8 @@ type AuthController struct {
 	authService *auth.JwtService
 }
 
-func NewAuthController(authService *auth.JwtService) *AuthController {
-	return &AuthController{authService: authService}
+func NewAuthController(authService *auth.JwtService) AuthController {
+	return AuthController{authService: authService}
 }
 
 func (a AuthController) Login(c *fiber.Ctx) error {
