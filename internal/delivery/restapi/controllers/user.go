@@ -12,12 +12,12 @@ import (
 )
 
 type UserController struct {
-	useCase domain.Usecase
-	logger  log.Logger
+	uc     domain.Usecase
+	logger log.Logger
 }
 
-func NewUserController(useCase domain.Usecase, logger log.Logger) *UserController {
-	return &UserController{useCase: useCase, logger: logger}
+func NewUserController(useCase domain.Usecase, logger log.Logger) UserController {
+	return UserController{uc: useCase, logger: logger}
 }
 
 func (u UserController) Create(c *fiber.Ctx) error {
@@ -26,7 +26,7 @@ func (u UserController) Create(c *fiber.Ctx) error {
 		return response.Err(c, http.StatusUnprocessableEntity, "invalid credentials")
 	}
 
-	user, err := u.useCase.Create(c.Context(), body)
+	user, err := u.uc.Create(c.Context(), body)
 	if err != nil {
 		return response.Err(c, 400, err.Error())
 	}
@@ -40,7 +40,7 @@ func (u UserController) GetSelf(c *fiber.Ctx) error {
 		return response.Err(c, 403, "invalid access_token")
 	}
 
-	user, err := u.useCase.ByID(c.Context(), claims.ID)
+	user, err := u.uc.ByID(c.Context(), claims.ID)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			return response.WithError(c, 404, err)
@@ -66,7 +66,7 @@ func (u UserController) UpdatePassword(c *fiber.Ctx) error {
 		return response.Err(c, http.StatusUnprocessableEntity, "invalid credentials")
 	}
 	body.UserID = claims.ID
-	if err := u.useCase.UpdatePassword(c.Context(), body); err != nil {
+	if err := u.uc.UpdatePassword(c.Context(), body); err != nil {
 		//TODO handling error
 		return response.WithError(c, 400, err)
 	}
@@ -78,7 +78,7 @@ func (u UserController) DeleteSelf(c *fiber.Ctx) error {
 	if err != nil {
 		return response.Err(c, 403, "invalid access_token")
 	}
-	if err := u.useCase.Delete(c.Context(), claims.ID); err != nil {
+	if err := u.uc.Delete(c.Context(), claims.ID); err != nil {
 		return response.WithError(c, 500, err)
 	}
 	u.logger.Info("delete user", log.UUID("user_id", claims.ID))
