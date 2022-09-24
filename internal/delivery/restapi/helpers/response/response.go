@@ -14,14 +14,6 @@ type Response struct {
 // JustOK is empty success response. It creates for reusing memory resources.
 var JustOK = Response{Ok: true}
 
-func NewOk(result any) Response {
-	return Response{Ok: true, Result: result}
-}
-
-func NewErr(err string) Response {
-	return Response{Ok: false, Error: err}
-}
-
 // Write writes response to fiber.Ctx.
 func Write(c *fiber.Ctx, code int, resp Response) error {
 	return c.Status(code).JSON(resp)
