@@ -33,3 +33,13 @@ func Err(c *fiber.Ctx, code int, err string) error {
 func WithError(c *fiber.Ctx, code int, err error) error {
 	return Err(c, code, err.Error())
 }
+
+func Wrap(c *fiber.Ctx, code int, msg string, err error) error {
+	return c.Status(code).JSON(fiber.Map{
+		"ok": false,
+		"error": fiber.Map{
+			"msg": msg,
+			"err": err,
+		},
+	})
+}
