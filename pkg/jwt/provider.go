@@ -16,12 +16,12 @@ func New(method SigningMethod, privateKey []byte) *Provider {
 	return &Provider{method: method, privateKey: privateKey}
 }
 
-// VerifyToken parse claims to dest (must be pointer) and check on valid.
-func (s Provider) VerifyToken(tokenString string, dest Claims) error {
+// VerifyTokenWithClaims parse claims to dest (must be pointer) and check on valid.
+func (s Provider) VerifyTokenWithClaims(tokenString string, dest Claims) error {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		dest,
-		func(token *jwt.Token) (interface{}, error) {
+		func(_ *jwt.Token) (interface{}, error) {
 			return s.privateKey, nil
 		},
 	)
@@ -34,6 +34,16 @@ func (s Provider) VerifyToken(tokenString string, dest Claims) error {
 	}
 
 	return nil
+}
+
+func (s Provider) VerifyToken(tokenString string) error {
+	// in jwt.Parse() call jwt.ParseWithClaims with MapClaims{} as claims.
+	return errors.WithStack(
+		s.VerifyTokenWithClaims(
+			tokenString,
+			jwt.MapClaims{},
+		),
+	)
 }
 
 func (s Provider) CreateToken(claims Claims) (string, error) {
