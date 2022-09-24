@@ -8,8 +8,8 @@ import (
 
 type BasicTask struct {
 	ID        uuid.UUID  `json:"id,omitempty"`
-	Body      string     `json:"body,omitempty"`
 	Title     string     `json:"title"`
+	Body      string     `json:"body,omitempty"`
 	CreatedAt time.Time  `json:"created_at,omitempty"`
 	UpdateAt  *time.Time `json:"update_at,omitempty"`
 	Done      bool       `json:"done"`

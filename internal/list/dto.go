@@ -17,10 +17,10 @@ type UpdateTaskListDTO struct {
 }
 
 type TaskInfoDTO struct {
-	Body      string     `json:"body"`
-	CreatedAt time.Time  `json:"created_at"`
 	ID        uuid.UUID  `json:"id"`
 	Title     string     `json:"title"`
+	Body      string     `json:"body"`
+	CreatedAt time.Time  `json:"created_at"`
 	UpdateAt  *time.Time `json:"update_at,omitempty"`
 	Done      bool       `json:"done"`
 }
