@@ -2,14 +2,19 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"os"
 
-	zapcore "github.com/vitaliy-ukiru/todo-app/pkg/log/zap"
+	"github.com/vitaliy-ukiru/todo-app/pkg/log/zap"
 )
 
 const separator = "\n\n"
 
-func New(path string) (Closer, error) {
+func New(console io.Writer) Logger {
+	return zap.NewLoggerConsole(console)
+}
+
+func NewWithFile(path string) (Closer, error) {
 	var logger Closer
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
@@ -33,7 +38,7 @@ func New(path string) (Closer, error) {
 		}
 	}
 
-	logger.Logger = zapcore.NewLogger(os.Stdout, file)
+	logger.Logger = zap.NewLogger(os.Stdout, file)
 	logger.file = file
 
 	return logger, nil

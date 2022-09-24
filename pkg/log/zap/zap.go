@@ -15,6 +15,16 @@ type Encoders struct {
 	Console zapcore.Encoder
 }
 
+func NewLoggerConsole(console io.Writer) Logger {
+	cfg := zap.NewProductionEncoderConfig()
+	cfg.EncodeTime = zapcore.TimeEncoderOfLayout(time.RFC1123)
+	return NewLoggerEncoders(console,
+		Encoders{
+			Console: zapcore.NewJSONEncoder(cfg),
+		},
+	)
+}
+
 func NewLogger(console io.Writer, files ...io.Writer) Logger {
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = zapcore.TimeEncoderOfLayout(time.RFC1123)
