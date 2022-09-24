@@ -7,7 +7,18 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+const (
+	DefaultIP   = "localhost"
+	DefaultPort = 5432
+)
+
 func ConnString(user, pass, db, ip string, port int) string {
+	if ip == "" {
+		ip = DefaultIP
+	}
+	if port == 0 {
+		port = DefaultPort
+	}
 	return fmt.Sprintf("postgres://%s:%s@%v:%v/%v?sslmode=disable",
 		user,
 		pass,
@@ -39,6 +50,5 @@ func New(ctx context.Context, connString string, options ...OptionFunc) (*pgxpoo
 		return nil, err
 	}
 
-	//return pgxpool.NewWithConfig(ctx, config)
 	return pgxpool.ConnectConfig(ctx, config)
 }
